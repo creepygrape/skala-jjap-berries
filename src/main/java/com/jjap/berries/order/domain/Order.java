@@ -20,24 +20,24 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Order extends BaseEntity {
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+  @ManyToOne(optional = false)
+  @JoinColumn(name = "user_id", nullable = false)
+  private User user;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
-    private OrderStatus status;
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 30)
+  private OrderStatus status;
 
-    @Column(nullable = false, precision = 19, scale = 0)
-    private BigDecimal totalPrice;
+  @Column(nullable = false, precision = 19, scale = 0)
+  private BigDecimal totalPrice;
 
-    public Order(User user, BigDecimal totalPrice) {
-        this.user = user;
-        this.totalPrice = totalPrice;
-        this.status = OrderStatus.PENDING;
-    }
+  public Order(User user, BigDecimal totalPrice) {
+    this.user = user;
+    this.totalPrice = totalPrice;
+    this.status = OrderStatus.PENDING;
+  }
 
-    public void cancel() {
-        this.status = OrderStatus.CANCELLED;
-    }
+  public void cancel() {
+    this.status = OrderStatus.CANCELLED;
+  }
 }

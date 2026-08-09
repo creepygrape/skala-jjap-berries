@@ -1,0 +1,227 @@
+Project berries {
+  database_type: 'MySQL'
+  Note: 'BERRIES fan community, commerce, and concert reservation ERD'
+}
+
+Table users {
+  id bigint [pk, increment]
+  email varchar(100) [not null, unique]
+  password varchar(255) [not null]
+  nickname varchar(30) [not null, unique]
+  profile_image_url varchar(500)
+  role varchar(30) [not null, note: 'USER | ARTIST | MANAGER']
+  status varchar(30) [not null, note: 'ACTIVE | INACTIVE | WITHDRAWN']
+  deleted_at timestamp
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Table refresh_token {
+  id bigint [pk, increment]
+  user_id bigint [not null, unique]
+  token varchar(512) [not null, unique]
+  expires_at timestamp [not null]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Table revoked_access_token {
+  id bigint [pk, increment]
+  token_hash char(64) [not null, unique]
+  expires_at timestamp [not null]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Table channel {
+  id bigint [pk, increment]
+  name varchar(100) [not null, unique]
+  description varchar(2000) [not null]
+  profile_image_url varchar(500)
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Table channel_user {
+  id bigint [pk, increment]
+  channel_id bigint [not null]
+  user_id bigint [not null, unique]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Table fan_membership {
+  id bigint [pk, increment]
+  channel_id bigint [not null]
+  user_id bigint [not null]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+
+  indexes {
+    (channel_id, user_id) [unique]
+  }
+}
+
+Table post {
+  id bigint [pk, increment]
+  channel_id bigint [not null]
+  author_id bigint [note: '탈퇴 사용자는 NULL 처리 가능']
+  title varchar(200) [not null]
+  content varchar(10000) [not null]
+  type varchar(30) [not null, note: 'FAN | ARTIST | NOTICE']
+  deleted_at timestamp
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Table comment {
+  id bigint [pk, increment]
+  post_id bigint [not null]
+  author_id bigint [note: '탈퇴 사용자는 NULL 처리 가능']
+  content varchar(2000) [not null]
+  root_comment_id bigint
+  reply_to_comment_id bigint
+  deleted_at timestamp
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Table post_like {
+  id bigint [pk, increment]
+  post_id bigint [not null]
+  user_id bigint [not null]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+
+  indexes {
+    (post_id, user_id) [unique]
+  }
+}
+
+Table product {
+  id bigint [pk, increment]
+  channel_id bigint [not null]
+  name varchar(200) [not null]
+  description varchar(2000) [not null]
+  price decimal(19,0) [not null]
+  stock int [not null]
+  image_url varchar(500)
+  status varchar(30) [not null, note: 'ON_SALE | STOPPED']
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Table orders {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  status varchar(30) [not null, note: 'PENDING | CANCELLED']
+  total_price decimal(19,0) [not null]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Table order_item {
+  id bigint [pk, increment]
+  order_id bigint [not null]
+  product_id bigint [not null]
+  unit_price decimal(19,0) [not null, note: '주문 시점 가격 스냅샷']
+  quantity int [not null]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Table concert {
+  id bigint [pk, increment]
+  channel_id bigint [not null]
+  title varchar(200) [not null]
+  venue varchar(300) [not null]
+  concert_at timestamp [not null]
+  reservation_start_at timestamp [not null]
+  reservation_end_at timestamp [not null]
+  status varchar(30) [not null, note: 'ON_SALE | STOPPED']
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Table seat {
+  id bigint [pk, increment]
+  concert_id bigint [not null]
+  section varchar(50) [not null]
+  seat_sequence int [not null]
+  seat_label varchar(50) [not null]
+  grade varchar(50) [not null]
+  price decimal(19,0) [not null]
+  status varchar(30) [not null, note: 'AVAILABLE | RESERVED']
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+
+  indexes {
+    (concert_id, section, seat_sequence) [unique]
+  }
+}
+
+Table reservation {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  concert_id bigint [not null]
+  seat_id bigint [not null]
+  status varchar(30) [not null, note: 'RESERVED | CANCELLED']
+  reserved_at timestamp [not null]
+  cancelled_at timestamp
+  reserved_price decimal(19,0) [note: '예매 시점 가격 스냅샷']
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Ref: refresh_token.user_id - users.id
+Ref: channel_user.channel_id > channel.id
+Ref: channel_user.user_id - users.id
+Ref: fan_membership.channel_id > channel.id
+Ref: fan_membership.user_id > users.id
+Ref: post.channel_id > channel.id
+Ref: post.author_id > users.id
+Ref: comment.post_id > post.id
+Ref: comment.author_id > users.id
+Ref: comment.root_comment_id > comment.id
+Ref: comment.reply_to_comment_id > comment.id
+Ref: post_like.post_id > post.id
+Ref: post_like.user_id > users.id
+Ref: product.channel_id > channel.id
+Ref: orders.user_id > users.id
+Ref: order_item.order_id > orders.id
+Ref: order_item.product_id > product.id
+Ref: concert.channel_id > channel.id
+Ref: seat.concert_id > concert.id
+Ref: reservation.user_id > users.id
+Ref: reservation.concert_id > concert.id
+Ref: reservation.seat_id > seat.id
+
+TableGroup authentication {
+  users
+  refresh_token
+  revoked_access_token
+}
+
+TableGroup channel_domain {
+  channel
+  channel_user
+  fan_membership
+}
+
+TableGroup community {
+  post
+  comment
+  post_like
+}
+
+TableGroup commerce {
+  product
+  orders
+  order_item
+}
+
+TableGroup concert_reservation {
+  concert
+  seat
+  reservation
+}

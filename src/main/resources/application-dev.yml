@@ -1,0 +1,8 @@
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+jwt:
+  access-token-expiration: 7d
+  refresh-token-expiration: 7d

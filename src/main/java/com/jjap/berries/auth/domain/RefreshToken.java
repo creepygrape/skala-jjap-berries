@@ -16,24 +16,24 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class RefreshToken extends BaseEntity {
 
-    @OneToOne(optional = false)
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
-    private User user;
+  @OneToOne(optional = false)
+  @JoinColumn(name = "user_id", nullable = false, unique = true)
+  private User user;
 
-    @Column(nullable = false, unique = true, length = 512)
-    private String token;
+  @Column(nullable = false, unique = true, length = 512)
+  private String token;
 
-    @Column(nullable = false)
-    private LocalDateTime expiresAt;
+  @Column(nullable = false)
+  private LocalDateTime expiresAt;
 
-    public RefreshToken(User user, String token, LocalDateTime expiresAt) {
-        this.user = user;
-        this.token = token;
-        this.expiresAt = expiresAt;
-    }
+  public RefreshToken(User user, String token, LocalDateTime expiresAt) {
+    this.user = user;
+    this.token = token;
+    this.expiresAt = expiresAt;
+  }
 
-    public void rotate(String token, LocalDateTime expiresAt) {
-        this.token = token;
-        this.expiresAt = expiresAt;
-    }
+  public void rotate(String token, LocalDateTime expiresAt) {
+    this.token = token;
+    this.expiresAt = expiresAt;
+  }
 }

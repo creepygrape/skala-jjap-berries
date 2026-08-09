@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jjap.berries.concert.mapper.SeatQueryMapper">
+  <select id="findSeats" resultType="com.jjap.berries.concert.dto.SeatResponse">
+    SELECT id AS seatId, concert_id AS concertId, section,
+           seat_sequence AS seatSequence, seat_label AS seatLabel, grade, price, status
+    FROM seat
+    WHERE concert_id = #{concertId}
+    <if test="section != null">AND section = #{section}</if>
+    <if test="grade != null">AND grade = #{grade}</if>
+    <if test="status != null">AND status = #{status}</if>
+    ORDER BY section ASC, seat_sequence ASC
+    LIMIT #{limit} OFFSET #{offset}
+  </select>
+
+  <select id="countSeats" resultType="long">
+    SELECT COUNT(*)
+    FROM seat
+    WHERE concert_id = #{concertId}
+    <if test="section != null">AND section = #{section}</if>
+    <if test="grade != null">AND grade = #{grade}</if>
+    <if test="status != null">AND status = #{status}</if>
+  </select>
+
+  <select id="findMaxSeatSequence" resultType="java.lang.Integer">
+    SELECT MAX(seat_sequence)
+    FROM seat
+    WHERE concert_id = #{concertId} AND section = #{section}
+  </select>
+</mapper>

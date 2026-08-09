@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jjap.berries.analytics.mapper.ChannelSalesMapper">
+
+  <select id="findChannelName" resultType="java.lang.String">
+    SELECT name
+    FROM channel
+    WHERE id = #{channelId}
+  </select>
+
+  <select id="findDailySales"
+          resultType="com.jjap.berries.analytics.dto.DailyChannelSalesResponse">
+    SELECT
+      sales.date AS date,
+      SUM(sales.orderCount) AS orderCount,
+      SUM(sales.quantitySold) AS quantitySold,
+      SUM(sales.productSalesAmount) AS productSalesAmount,
+      SUM(sales.reservationCount) AS reservationCount,
+      SUM(sales.concertSalesAmount) AS concertSalesAmount,
+      SUM(sales.productSalesAmount) + SUM(sales.concertSalesAmount) AS totalSalesAmount
+    FROM (
+      SELECT
+        CAST(o.created_at AS DATE) AS date,
+        COUNT(DISTINCT o.id) AS orderCount,
+        COALESCE(SUM(oi.quantity), 0) AS quantitySold,
+        COALESCE(SUM(oi.unit_price * oi.quantity), 0) AS productSalesAmount,
+        0 AS reservationCount,
+        0 AS concertSalesAmount
+      FROM orders o
+      JOIN order_item oi ON oi.order_id = o.id
+      JOIN product p ON p.id = oi.product_id
+      WHERE p.channel_id = #{channelId}
+        AND o.created_at &gt;= #{from}
+        AND o.created_at &lt; #{toExclusive}
+        AND o.status != 'CANCELLED'
+      GROUP BY CAST(o.created_at AS DATE)
+
+      UNION ALL
+
+      SELECT
+        CAST(r.reserved_at AS DATE) AS date,
+        0 AS orderCount,
+        0 AS quantitySold,
+        0 AS productSalesAmount,
+        COUNT(DISTINCT r.id) AS reservationCount,
+        COALESCE(SUM(COALESCE(r.reserved_price, s.price)), 0) AS concertSalesAmount
+      FROM reservation r
+      JOIN seat s ON s.id = r.seat_id
+      JOIN concert c ON c.id = r.concert_id
+      WHERE c.channel_id = #{channelId}
+        AND r.reserved_at &gt;= #{from}
+        AND r.reserved_at &lt; #{toExclusive}
+        AND r.status != 'CANCELLED'
+      GROUP BY CAST(r.reserved_at AS DATE)
+    ) sales
+    GROUP BY sales.date
+    ORDER BY date
+  </select>
+  <select id="findProductSales"
+          resultType="com.jjap.berries.analytics.dto.ProductSalesResponse">
+    SELECT p.id AS productId, p.name AS productName,
+           COUNT(DISTINCT o.id) AS orderCount,
+           COALESCE(SUM(oi.quantity), 0) AS quantitySold,
+           COALESCE(SUM(oi.unit_price * oi.quantity), 0) AS salesAmount
+    FROM orders o
+    JOIN order_item oi ON oi.order_id = o.id
+    JOIN product p ON p.id = oi.product_id
+    WHERE p.channel_id = #{channelId}
+      AND o.created_at &gt;= #{from}
+      AND o.created_at &lt; #{toExclusive}
+      AND o.status != 'CANCELLED'
+    GROUP BY p.id, p.name
+    ORDER BY salesAmount DESC, p.id ASC
+  </select>
+
+  <select id="findConcertSales"
+          resultType="com.jjap.berries.analytics.dto.ConcertSalesResponse">
+    SELECT c.id AS concertId, c.title AS concertTitle,
+           COUNT(DISTINCT r.id) AS reservationCount,
+           COALESCE(SUM(COALESCE(r.reserved_price, s.price)), 0) AS salesAmount
+    FROM reservation r
+    JOIN concert c ON c.id = r.concert_id
+    JOIN seat s ON s.id = r.seat_id
+    WHERE c.channel_id = #{channelId}
+      AND r.reserved_at &gt;= #{from}
+      AND r.reserved_at &lt; #{toExclusive}
+      AND r.status != 'CANCELLED'
+    GROUP BY c.id, c.title
+    ORDER BY salesAmount DESC, c.id ASC
+  </select>
+
+  <select id="findConcertChannelId" resultType="java.lang.Long">
+    SELECT channel_id FROM concert WHERE id = #{concertId}
+  </select>
+
+  <select id="findSeatGradeSales"
+          resultType="com.jjap.berries.analytics.dto.SeatGradeSalesResponse">
+    SELECT s.grade AS grade,
+           COUNT(DISTINCT s.id) AS totalSeatCount,
+           COUNT(DISTINCT CASE WHEN r.id IS NOT NULL THEN s.id END) AS reservedSeatCount,
+           ROUND(
+             100.0 * COUNT(DISTINCT CASE WHEN r.id IS NOT NULL THEN s.id END)
+             / NULLIF(COUNT(DISTINCT s.id), 0), 2
+           ) AS reservationRate,
+           COALESCE(
+             SUM(CASE WHEN r.id IS NOT NULL THEN COALESCE(r.reserved_price, s.price) ELSE 0 END),
+             0
+           ) AS salesAmount
+    FROM seat s
+    LEFT JOIN reservation r ON r.seat_id = s.id AND r.status != 'CANCELLED'
+    WHERE s.concert_id = #{concertId}
+    GROUP BY s.grade
+    ORDER BY s.grade ASC
+  </select>
+</mapper>

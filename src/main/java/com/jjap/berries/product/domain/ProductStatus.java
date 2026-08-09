@@ -1,6 +1,6 @@
 package com.jjap.berries.product.domain;
 
 public enum ProductStatus {
-    ON_SALE,
-    STOPPED
+  ON_SALE,
+  STOPPED
 }

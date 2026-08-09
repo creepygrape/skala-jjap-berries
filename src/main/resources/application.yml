@@ -2,11 +2,22 @@ spring:
   application:
     name: berries
 
+  profiles:
+    default: dev
+
+  config:
+    import: optional:file:.env[.properties]
+
+  data:
+    web:
+      pageable:
+        max-page-size: 100
+
   datasource:
-    url: jdbc:h2:mem:berries;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    driver-class-name: org.h2.Driver
-    username: test
-    password:
+    url: ${DB_URL:jdbc:h2:file:./data/berries;MODE=PostgreSQL;DB_CLOSE_ON_EXIT=FALSE}
+    driver-class-name: ${DB_DRIVER:org.h2.Driver}
+    username: ${DB_USERNAME:test}
+    password: ${DB_PASSWORD:}
 
   h2:
     console:
@@ -14,13 +25,18 @@ spring:
       path: /h2-console
 
   jpa:
+    defer-datasource-initialization: true
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     properties:
       hibernate:
         format_sql: true
-    show-sql: true
+    show-sql: ${JPA_SHOW_SQL:true}
     open-in-view: false
+
+  sql:
+    init:
+      mode: always
 
 springdoc:
   swagger-ui:
@@ -29,6 +45,11 @@ springdoc:
     tags-sorter: alpha
   api-docs:
     path: /v3/api-docs
+
+jwt:
+  secret: ${JWT_SECRET}
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:3600000}
+  refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:1209600000}
 
 server:
   port: 8080
@@ -49,6 +70,6 @@ management:
 logging:
   level:
     root: INFO
-    com.jjap.berries: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.orm.jdbc.bind: TRACE
+    com.jjap.berries: INFO
+    org.hibernate.SQL: ${HIBERNATE_SQL_LOG_LEVEL:DEBUG}
+    org.hibernate.orm.jdbc.bind: ${HIBERNATE_BIND_LOG_LEVEL:TRACE}

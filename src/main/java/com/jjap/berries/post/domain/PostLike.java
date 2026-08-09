@@ -17,16 +17,16 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PostLike extends BaseEntity {
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "post_id", nullable = false)
-    private Post post;
+  @ManyToOne(optional = false)
+  @JoinColumn(name = "post_id", nullable = false)
+  private Post post;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+  @ManyToOne(optional = false)
+  @JoinColumn(name = "user_id", nullable = false)
+  private User user;
 
-    public PostLike(Post post, User user) {
-        this.post = post;
-        this.user = user;
-    }
+  public PostLike(Post post, User user) {
+    this.post = post;
+    this.user = user;
+  }
 }
